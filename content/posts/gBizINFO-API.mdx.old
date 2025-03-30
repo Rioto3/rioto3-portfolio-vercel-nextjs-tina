@@ -1,14 +1,33 @@
 ---
-title: Learning about TinaCMS
-heroImg: /uploads/unsplash-lylCw4zcA7I.jpg
-excerpt: >
-  What if you could edit your blog content directly on the page—just like a
-  Google Doc? Meet TinaCMS, a headless CMS with live editing that makes content
-  creation actually enjoyable.
-author: null
-date: '2021-07-12T07:00:00.000Z'
----
+title: 'ニュース砂漠を埋めるデータの力：gBizINFO APIで挑む補助金分析'
+description: '地方メディア衰退時代に、一般市民でも経産省APIで公的資金の流れを検証。統計手法を用いた補助金分配の異常パターン検出と分析フレームワーク'
+updatedDate: '2025-03-20'
+createdDate: '2025-02-20'
+tags: ['ニュース砂漠', 'データ分析', 'オープンデータ', 'Python', '公的資金', '地域経済', 'データリテラシー', '市民ジャーナリズム', 'API活用']
+published: true
 
+# [コンテンツ戦略]
+# 目的は？: 
+# 技術力をマーケティングできるような記事を書きたい
+
+# どのように？:
+# gBizINFO APIを使う。
+# 独自の観点から、技術的に十分かつコンテンツとしても興味深いものにしよう。
+
+# 記事の方向性は？:
+# 結論の要点を箇条書きにして方向性を確立。
+# その後、生成AIを活用して記事を調整
+
+# 結論は？:
+# - GBIZINFO APIを「既得権益の傾向調査」というテーマで活用できる一例を示すことができた。
+# - これは、市民が統計の観点から既得権益を低コストで監視できるという意義がある。
+# - しかし、このAPIには技術的限界（データの欠落、時間範囲）があるということを前提に使用すべきだ。
+# - 今回使用したプログラムとデータセットはGithubに置いておくので検証して欲しい。
+# - あくまで今回は、学術的観点から客観的に評価したものであり、真偽のまでは保証しないし、それはそのような場で改めて行われるべきだ。
+# - 今回は、2020年度の特に表面的に出てきた補助金の回数からアプローチしたが、年度を跨ぐ傾向や別の指標を用いるアプローチに発展も考えられる
+# - 今回のコード作成と記事のまとめについては、Claude.3.7 Sonnetを活用したが、かなり使える。特に、notebookとの相性が良い。
+# - ニュース記事の収集については、chatgptが役に立った。
+---
 
 ## はじめに
 
@@ -20,19 +39,23 @@ date: '2021-07-12T07:00:00.000Z'
 
 *参考：[朝日新聞「日本でもニュース砂漠？　ジャーナリズムの衰退がもたらすものとは」](https://www.asahi.com/articles/AST3F1TTNT3FUPQJ00HM.html)*
 
+
 ## データが語る不透明な公的資金の流れ
+
 
 ### 調査の出発点：二段階アプローチ
 
 本調査は「既得権益をAPIで探知できるか」という仮説から出発し、**データによる公的資金監視の新たな可能性**を探求しました。二段階アプローチは以下のように構成されています：
 
 1. **既知の不正事例の検証**：報道された不正受給事例がAPIデータに反映されているか
-   * 信頼性確認のための予備調査
-   * APIデータの限界を理解するための基盤作り
+   - 信頼性確認のための予備調査
+   - APIデータの限界を理解するための基盤作り
+
 2. **未知のパターン発見**：データ分析から新たな既得権益の兆候を検出
-   * **本研究の核心的価値**
-   * 報道に依存しない市民主導の監視体制の可能性
-   * 統計的異常値からの新たな不透明性の発見
+   - **本研究の核心的価値**
+   - 報道に依存しない市民主導の監視体制の可能性
+   - 統計的異常値からの新たな不透明性の発見
+
 
 ### 1. 既知の不正事例とAPIデータの整合性
 
@@ -43,26 +66,26 @@ date: '2021-07-12T07:00:00.000Z'
 まず、報道された不正受給事例と経済産業省のウェブサイトで公開されているデータの整合性を検証しました：
 
 #### カネヨ山野辺水産の事例
-
 > 東日本大震災の復興支援補助金を不正受給したとして2025年3月に塩釜市の水産加工会社元社長が逮捕（[朝日新聞](https://www.asahi.com/articles/AST353QK9T35UNHB00LM.html)）
 
 この事件は比較的新しく、まだ有罪確定はされていません。メディアは逮捕段階では報道するものの、判決段階では報道しない傾向があります。
 そのため、データから容疑者の潔白を証明するツールとしての可能性も期待しました。
+
 
 [経済産業省データベース](https://info.gbiz.go.jp/hojin/ichiran?hojinBango=6370601000166)では企業情報は存在するものの、補助金受給データが一切記録されていませんでした。
 
 これでは、手法的にデータを取得できていない可能性があります。追加で検証してみます。
 
 #### ビック・ママの事例
-
 > 雇用調整助成金3億5074万円、緊急雇用安定助成金1634万円の不正受給（[日本テレビ 2024年11月](https://news.ntv.co.jp/n/mmt/category/society/mm0474a82bc8f54f0381e3af29a08e7338)）
 
 宮城労働局過去最高額の不正受給が報道されていますが、[経済産業省データベース](https://info.gbiz.go.jp/hojin/ichiran?hojinBango=4370001009966)には以下の2件のみが記録されています：
 
+
 ![](/images/bigmama.png "ビック・ママの補助金給付情報")
 
-#### ファイブエム商事の事例
 
+#### ファイブエム商事の事例
 > 雇用調整助成金など5300万円余りを不正受給（[NHK 2023年6月16日](https://www3.nhk.or.jp/lnews/sendai/20230616/6000023811.html)）
 
 同じ経営者が運営する3社（ファイブエム商事、ミューズ、ヒューマンリンクインターナショナル）が関与していましたが、[経済産業省データベース](https://info.gbiz.go.jp/hojin/ichiran?hojinBango=3370302001994)には以下の2件のみが記録されています：
@@ -72,7 +95,6 @@ date: '2021-07-12T07:00:00.000Z'
 関連会社2社はデータベースに情報すら存在しません。
 
 #### 検証結果
-
 これらの検証から**公開データには重大な限界がある**ことが判明しました。
 そもそも、今回合計５社を検索しましたが、ニュースで取り上げられた補助金に関連する情報が含まれていません。
 
@@ -81,6 +103,8 @@ date: '2021-07-12T07:00:00.000Z'
 
 経済産業省が運営するこのデータベースは、各省庁から提供されるオープンデータを集約する設計ですが、実際には重要な補助金情報が欠落しています。
 特に厚生労働省管轄の雇用調整助成金や復興支援関連の補助金が反映されていない点は、公的資金の透明性における構造的問題を示しています。
+
+
 
 ### 2.補助金受給パターンから見える異常値
 
@@ -95,33 +119,32 @@ date: '2021-07-12T07:00:00.000Z'
 特に注目すべきは2つ目のグループです。通常、民間企業が補助金を受け取ること自体が珍しいにもかかわらず、突出して多くの補助金を受給している企業が存在します。ここでは、特に象徴的な２社について考察します：
 
 #### 一般社団法人環境共創イニシアチブの事例
-
-* 補助金受給回数：45件（91位）
-* 総額：約1兆572億円
+- 補助金受給回数：45件（91位）
+- 総額：約1兆572億円
 
 この団体について調査したところ、朝日新聞（2020年9月24日）の報道で「電通が設立した法人であり、経産省の補助金事業の9割が競争なしで決まっていた」という事実が判明しました。[朝日新聞「電通設立の法人、競争なく9割受託　経産省の補助金事業」](https://www.asahi.com/articles/ASN9R6HP5N93UUPI001.html)によれば、公募に他の事業者が参加せず、さらに事業のほとんどが電通に再委託されていたという構造的問題が指摘されています。APIデータから異常値を検出し、実際の問題につながる事例を発見できることが確認できました。
 
-#### ランドブレイン株式会社の事例
 
-* 補助金受給回数：19件（472位）
-* 総額：約296億円
+#### ランドブレイン株式会社の事例
+- 補助金受給回数：19件（472位）
+- 総額：約296億円
 
 シンクタンクとして活動するこの企業について詳細調査を行ったところ、以下のような特徴が見つかりました：
 
 1. ホームページ上での役員情報の明示的な記載なし
-   ([ホームページURL](https://www.landbrains.co.jp/))
+([ホームページURL](https://www.landbrains.co.jp/))
 2. 日本民間公益活動連携機構（JANPIA）における役員名簿では、代表取締役吉武祐一氏以外が明示的に黒塗り
-   ([資料PDF](https://www.janpia.or.jp/koubo/2020/download/syorui/normal/03/syorui20_03_7_2.pdf))
+([資料PDF](https://www.janpia.or.jp/koubo/2020/download/syorui/normal/03/syorui20_03_7_2.pdf))
 3. 2023年に宮崎県串間市発注の公共事業をめぐり、官製談合防止法違反で社員が逮捕される事案があった（後に処分保留で釈放されたが、詳細説明なし）
-   ([弊社社員の逮捕について](https://www.landbrains.co.jp/hp/doc/231117.pdf))
-   ([処分保留で釈放](https://www.landbrains.co.jp/hp/doc/231208.pdf))
+([弊社社員の逮捕について](https://www.landbrains.co.jp/hp/doc/231117.pdf))
+([処分保留で釈放](https://www.landbrains.co.jp/hp/doc/231208.pdf))
 4. 貸借対照表によれば資産合計約27.5億円、利益剰余金約17.8億円と公的資金への依存度が高い事業構造が推測される
-   \[決算情報][https://catr.jp/companies/ab58b/109037/settlements/dbd84/299255](https://catr.jp/companies/ab58b/109037/settlements/dbd84/299255)
+[決算情報]https://catr.jp/companies/ab58b/109037/settlements/dbd84/299255
+
 
 一般的な株式会社としては極めて異例の情報公開姿勢であり、公的資金を多数受給している企業としての説明責任に疑問が残ります。
 
 #### 検証結果
-
 この検証から得られた重要な発見は、統計的アプローチによって公的資金の不透明な流れを発見できることが実証された点です。
 APIデータから補助金受給の統計的異常値を特定し、追加調査を行うことで構造的な問題が明らかになりました。
 
@@ -145,7 +168,8 @@ APIデータから補助金受給の統計的異常値を特定し、追加調�
 
 あくまで今回は、GBIZINFO APIの活用を考えたいというモチベーションからスタートしたので、学術的観点から客観的に評価するという範囲で終了とします。経済産業省の本APIに関するQ＆Aにある「オープンデータとして公開可能なもの」を活用する範囲に留め、特定の組織や企業に対する真偽までは考察・保証を行いません。それはより適切な場で改めて検証されるべきです。
 
-* [経済産業省HP よくあるご質問（FAQ）: https://info.gbiz.go.jp/faq/](https://info.gbiz.go.jp/faq/)
+
+- [経済産業省HP よくあるご質問（FAQ）: https://info.gbiz.go.jp/faq/](https://info.gbiz.go.jp/faq/)
 
 ### 今後の展開
 
@@ -154,14 +178,15 @@ APIデータから補助金受給の統計的異常値を特定し、追加調�
 
 この度使用したプログラムとデータセットはGithubに公開していますので、検証していただければ幸いです。
 
-* [Githubレポジトリ: https://github.com/Rioto3/subsidy-analysis-jp/](https://github.com/Rioto3/subsidy-analysis-jp/)
+
+- [Githubレポジトリ: https://github.com/Rioto3/subsidy-analysis-jp/](https://github.com/Rioto3/subsidy-analysis-jp/)
 
 ### 生成AI
 
 本研究では以下の観点で生成AIツールを使用しました：
+- Claude 3.7 Sonnet: コード作成・記事コンテンツの作成
+- ニュース記事収集: ChatGPT・Perplexity
 
-* Claude 3.7 Sonnet: コード作成・記事コンテンツの作成
-* ニュース記事収集: ChatGPT・Perplexity
 
 ## 付録（技術・詳細部分）
 
@@ -170,110 +195,100 @@ APIデータから補助金受給の統計的異常値を特定し、追加調�
 
 ここからのセクションをChatgptやClaudeなどの生成AIに読み込ませ、誰もが活用できるよう願っています。
 
-GPTs: [https://chatgpt.com/g/g-84Ir7kj6g-jiao-ete-gashe-shang-ask-gas-sensei](https://chatgpt.com/g/g-84Ir7kj6g-jiao-ete-gashe-shang-ask-gas-sensei)
+GPTs: https://chatgpt.com/g/g-84Ir7kj6g-jiao-ete-gashe-shang-ask-gas-sensei
+
 
 ### APIの技術的概要
 
 gBizINFO REST API は、経済産業省が提供する法人情報データベースにアクセスするためのインターフェースです。
 法人の基本情報、財務情報、特許情報など以下のような様々なデータを取得できます。
 
-* [SwaggerURL: https://info.gbiz.go.jp/hojin/swagger-ui/index.html#/gBizINFO%20REST%20API](https://info.gbiz.go.jp/hojin/swagger-ui/index.html#/gBizINFO%20REST%20API)
-* [API利用方法: https://info.gbiz.go.jp/api/index.html](https://info.gbiz.go.jp/api/index.html)
-* [Q\&A: https://info.gbiz.go.jp/faq/](https://info.gbiz.go.jp/faq/)
+- [SwaggerURL: https://info.gbiz.go.jp/hojin/swagger-ui/index.html#/gBizINFO%20REST%20API](https://info.gbiz.go.jp/hojin/swagger-ui/index.html#/gBizINFO%20REST%20API)
+- [API利用方法: https://info.gbiz.go.jp/api/index.html](https://info.gbiz.go.jp/api/index.html)
+- [Q&A: https://info.gbiz.go.jp/faq/](https://info.gbiz.go.jp/faq/)
 
 #### HojinInfo (法人情報)
-
-* **corporate\_number**: 法人番号
-* **name**: 法人名
-* **kana**: 法人名フリガナ
-* **name\_en**: 法人名英語
-* **postal\_code**: 郵便番号
-* **location**: 本社所在地
-* **status**: ステータス
-* **representative\_name**: 法人代表者名
-* **representative\_position**: 法人代表者役職
-* **capital\_stock**: 資本金
-* **employee\_number**: 従業員数
-* **company\_url**: 企業ホームページ
-* **business\_summary**: 事業概要
-* **founding\_year**: 創業年
-* **date\_of\_establishment**: 設立年月日
+- **corporate_number**: 法人番号
+- **name**: 法人名
+- **kana**: 法人名フリガナ
+- **name_en**: 法人名英語
+- **postal_code**: 郵便番号
+- **location**: 本社所在地
+- **status**: ステータス
+- **representative_name**: 法人代表者名
+- **representative_position**: 法人代表者役職
+- **capital_stock**: 資本金
+- **employee_number**: 従業員数
+- **company_url**: 企業ホームページ
+- **business_summary**: 事業概要
+- **founding_year**: 創業年
+- **date_of_establishment**: 設立年月日
 
 #### 関連情報
-
-* **certification**: 届出・認定情報
-* **commendation**: 表彰情報
-* **finance**: 財務情報
-* **patent**: 特許情報
-* **procurement**: 調達情報
-* **subsidy**: 補助金情報
-* **workplace\_info**: 職場情報
+- **certification**: 届出・認定情報
+- **commendation**: 表彰情報
+- **finance**: 財務情報
+- **patent**: 特許情報
+- **procurement**: 調達情報
+- **subsidy**: 補助金情報
+- **workplace_info**: 職場情報
 
 #### Finance (財務情報)
-
-* **accounting\_standards**: 会計基準
-* **fiscal\_year\_cover\_page**: 期
-* **major\_shareholders**: 大株主情報
-* **management\_index**: 財務指標
+- **accounting_standards**: 会計基準
+- **fiscal_year_cover_page**: 期
+- **major_shareholders**: 大株主情報
+- **management_index**: 財務指標
 
 #### ManagementIndex (財務指標)
-
-* **net\_sales\_summary\_of\_business\_results**: 売上高
-* **ordinary\_income\_loss\_summary\_of\_business\_results**: 経常利益又は経常損失
-* **net\_income\_loss\_summary\_of\_business\_results**: 当期純利益又は当期純損失
-* **total\_assets\_summary\_of\_business\_results**: 総資産額
-* **capital\_stock\_summary\_of\_business\_results**: 資本金
-* **net\_assets\_summary\_of\_business\_results**: 純資産額
-* **number\_of\_employees**: 従業員数
+- **net_sales_summary_of_business_results**: 売上高
+- **ordinary_income_loss_summary_of_business_results**: 経常利益又は経常損失
+- **net_income_loss_summary_of_business_results**: 当期純利益又は当期純損失
+- **total_assets_summary_of_business_results**: 総資産額
+- **capital_stock_summary_of_business_results**: 資本金
+- **net_assets_summary_of_business_results**: 純資産額
+- **number_of_employees**: 従業員数
 
 #### WorkplaceInfoBean (職場情報)
-
-* **base\_infos**: 勤務基本情報
-* **women\_activity\_infos**: 女性の活躍に関する情報
-* **compatibility\_of\_childcare\_and\_work**: 育児・仕事の両立に関する情報
+- **base_infos**: 勤務基本情報
+- **women_activity_infos**: 女性の活躍に関する情報
+- **compatibility_of_childcare_and_work**: 育児・仕事の両立に関する情報
 
 #### PatentInfo (特許情報)
-
-* **patent\_type**: 特許/意匠/商標
-* **title**: 発明の名称/意匠に係る物品/表示用商標
-* **application\_number**: 出願番号
-* **application\_date**: 出願年月日
-* **classifications**: 分類
+- **patent_type**: 特許/意匠/商標
+- **title**: 発明の名称/意匠に係る物品/表示用商標
+- **application_number**: 出願番号
+- **application_date**: 出願年月日
+- **classifications**: 分類
 
 #### ProcurementInfo (調達情報)
-
-* **title**: 事業名
-* **government\_departments**: 府省
-* **date\_of\_order**: 受注日
-* **amount**: 金額
-* **joint\_signatures**: 連名
+- **title**: 事業名
+- **government_departments**: 府省
+- **date_of_order**: 受注日
+- **amount**: 金額
+- **joint_signatures**: 連名
 
 #### SubsidyInfo (補助金情報)
-
-* **title**: 補助金等
-* **government\_departments**: 府省
-* **date\_of\_approval**: 認定日
-* **amount**: 金額
-* **target**: 対象
-* **subsidy\_resource**: 補助金財源
+- **title**: 補助金等
+- **government_departments**: 府省
+- **date_of_approval**: 認定日
+- **amount**: 金額
+- **target**: 対象
+- **subsidy_resource**: 補助金財源
 
 #### 注意点
+- 認証: APIキーを用いたBasic認証（無料登録制）
+- レスポンス形式: JSON形式
+- 主要パラメータ: 法人番号、法人名、業種コード
+- 1日あたりのリクエスト上限: 10,000回
 
-* 認証: APIキーを用いたBasic認証（無料登録制）
-* レスポンス形式: JSON形式
-* 主要パラメータ: 法人番号、法人名、業種コード
-* 1日あたりのリクエスト上限: 10,000回
-
-**cURL での実行例\:prefecture番号1（北海道）の法人情報を一件取得**
-
-```cURL
+**cURL での実行例:prefecture番号1（北海道）の法人情報を一件取得**
+``` cURL での実行例（公式動作確認用のAPIトークン付）
 curl -X GET "https://info.gbiz.go.jp/hojin/v1/hojin?limit=1&prefecture=01" \
      -H "X-hojinInfo-api-token: DTcLxzo1lZaUYaQPVdSRxdS4MzlXNCs4"
 ```
 
 **出力例**
-
-```出力例
+``` 出力例
 {
   "id": null,
   "errors": null,
@@ -293,13 +308,14 @@ curl -X GET "https://info.gbiz.go.jp/hojin/v1/hojin?limit=1&prefecture=01" \
 }
 ```
 
-### データ分析パイプライン
 
+
+### データ分析パイプライン
 ここからは、本調査において使用した内容について紹介していきます。
 
-#### カネヨ山野辺水産の分析コード
 
-```python
+#### カネヨ山野辺水産の分析コード
+``` python
 from pprint import pprint
 import requests
 
@@ -345,12 +361,12 @@ if __name__ == "__main__":
 
 上記と同様、会社名（今回は、”ビック・ママ”）で抽出を試みる。
 
-```python
+``` python
 if __name__ == "__main__":
     main(company_name="ビック・ママ")
 ```
 
-```json
+``` json
 gBizINFO APIから「ビック・ママ」の情報を検索しています...
 検索結果: 2件
 
@@ -376,7 +392,7 @@ gBizINFO APIから「ビック・ママ」の情報を検索しています...
 今回は、宮城県の”ビック・ママ”のことでしたので、２件目が適当です。
 法人番号 '4370001009966' を控えておきます。
 
-```python
+``` python
 
 
 # メイン処理
@@ -400,9 +416,10 @@ if __name__ == "__main__":
 
 ```
 
-corporate\_number に先ほど控えた法人番号を入力して実行します。
+corporate_number に先ほど控えた法人番号を入力して実行します。
 
-```json
+
+``` json
 
 企業の補助金情報を取得しています...
 
@@ -430,16 +447,17 @@ corporate\_number に先ほど控えた法人番号を入力して実行しま�
 
 これで２件取得できました。
 
+
 #### ファイブエム商事の分析コード
 
 こちらも同様に実行します。
 
-```python
+``` python
 if __name__ == "__main__":
     main(company_name="ファイブエム商事")
 ```
 
-```json
+``` json
 gBizINFO APIから「ファイブエム商事」の情報を検索しています...
 検索結果: 1件
 
@@ -457,7 +475,8 @@ gBizINFO APIから「ファイブエム商事」の情報を検索していま�
 
 では同様に補助金データを取得します。
 
-```python
+
+``` python
 # メイン処理
 if __name__ == "__main__":
     corporate_number = "3370302001994"  # 上で取得した法人番号
@@ -478,7 +497,7 @@ if __name__ == "__main__":
         print("\n補助金情報が取得できませんでした")
 ```
 
-```json
+``` json
 企業の補助金情報を取得しています...
 
 補助金情報: 2件
@@ -505,25 +524,28 @@ if __name__ == "__main__":
 
 データを取得できました。
 
+
 #### 一般社団法人環境共創イニシアチブの分析コード
 
-aaa
 
+aaa
 #### ランドブレイン株式会社の分析コード
 
+
 aaa
+
+
+
 
 ### 技術資料
 
 #### 使用技術スタック
-
-* 言語: Python 3.9
-* 主要ライブラリ: pandas, numpy, matplotlib, seaborn, requests
-* データ保存: SQLite, CSV
-* 可視化: Jupyter Notebook
+- 言語: Python 3.9
+- 主要ライブラリ: pandas, numpy, matplotlib, seaborn, requests
+- データ保存: SQLite, CSV
+- 可視化: Jupyter Notebook
 
 #### コード構造
-
 ```
 inspection-gbizinfo-api/
 ├── data/                      # 収集データ保存
@@ -540,7 +562,6 @@ inspection-gbizinfo-api/
 ```
 
 #### GitHub参照情報
-
-* リポジトリ: [inspection-gbizinfo-api](https://github.com/Rioto3/inspection-gbizinfo-api)
-* ライセンス: MIT
-* 利用方法: リポジトリをクローン後、`config.py`にAPIキーを設定し、notebooksを順に実行
+- リポジトリ: [inspection-gbizinfo-api](https://github.com/Rioto3/inspection-gbizinfo-api)
+- ライセンス: MIT
+- 利用方法: リポジトリをクローン後、`config.py`にAPIキーを設定し、notebooksを順に実行

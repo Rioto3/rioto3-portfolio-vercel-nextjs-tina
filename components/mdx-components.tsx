@@ -27,7 +27,30 @@ export const components: Components<{
     if (!props) {
       return <></>;
     }
-    return <Prism lang={props.lang} value={props.value} />;
+    return <>
+
+    {/* <Prism theme={'palenight'} lang={props.lang} value={props.value} /> */}
+    {/* <Prism theme={'github'} lang={props.lang} value={props.value} /> */}
+    {/* <Prism theme={'gruvboxMaterialLight'} lang={props.lang} value={props.value} /> */}
+    <Prism theme={'vsDark'} lang={props.lang} value={props.value} />
+    {/* <Prism theme={'duotoneLight'} lang={props.lang} value={props.value} /> */}
+
+    {/* <Prism theme={'jettwaveLight'} lang={props.lang} value={props.value} /> */}
+    {/* <Prism theme={'vsDark'} lang={props.lang} value={props.value} /> */}
+
+
+    {/* <Prism theme={'nightOwlLight'} lang={props.lang} value={props.value} /> */}
+
+
+
+
+
+
+
+
+
+
+    </>;
   },
   BlockQuote: (props: {
     children: TinaMarkdownContent;

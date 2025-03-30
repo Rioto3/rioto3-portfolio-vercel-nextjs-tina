@@ -1,14 +1,14 @@
 ---
-title: Learning about TinaCMS
-heroImg: /uploads/unsplash-lylCw4zcA7I.jpg
-excerpt: >
-  What if you could edit your blog content directly on the page—just like a
-  Google Doc? Meet TinaCMS, a headless CMS with live editing that makes content
-  creation actually enjoyable.
-author: null
-date: '2021-07-12T07:00:00.000Z'
+title: ニュース砂漠を埋めるデータの力：gBizINFO APIで挑む補助金分析
+heroImg: >-
+  /uploads/DALL·E 2025-03-28 15.07.57 - A digital business information platform
+  interface inspired by 'gbiz info'. The image showcases a clean, modern design
+  with a blue and white color sche.webp
+excerpt: |
+  地方メディア衰退時代に、一般市民でも経産省APIで公的資金の流れを検証。統計手法を用いた補助金分配の異常パターン検出と分析フレームワーク
+author: content/authors/Rioto3.md
+date: 2025-03-27T20:30:00.000Z
 ---
-
 
 ## はじめに
 
@@ -59,7 +59,12 @@ date: '2021-07-12T07:00:00.000Z'
 
 宮城労働局過去最高額の不正受給が報道されていますが、[経済産業省データベース](https://info.gbiz.go.jp/hojin/ichiran?hojinBango=4370001009966)には以下の2件のみが記録されています：
 
-![](/images/bigmama.png "ビック・ママの補助金給付情報")
+補助金交付情報
+
+| 認定日 | 補助金等                             | 金額          | 対象 | 府省    | 備考      |
+| --- | -------------------------------- | ----------- | -- | ----- | ------- |
+| -   | ［第五回］令和２年度事業再構築補助金（交付申請等）        | 34,382,133円 | -  | 中小企業庁 | jGrants |
+| -   | 令和２年度コンテンツグローバル需要創出促進・基盤強化事業費補助金 | 1,795,000円  | -  | 経済産業省 | 間接      |
 
 #### ファイブエム商事の事例
 
@@ -67,7 +72,12 @@ date: '2021-07-12T07:00:00.000Z'
 
 同じ経営者が運営する3社（ファイブエム商事、ミューズ、ヒューマンリンクインターナショナル）が関与していましたが、[経済産業省データベース](https://info.gbiz.go.jp/hojin/ichiran?hojinBango=3370302001994)には以下の2件のみが記録されています：
 
-![](/images/five_m.png "ファイブエム商事の補助金給付情報")
+補助金交付情報
+
+| 認定日         | 補助金等         | 金額         | 対象 | 府省    | 備考 |
+| ----------- | ------------ | ---------- | -- | ----- | -- |
+| 2021年02月17日 | 受動喫煙防止対策助成金  | 1,000,000円 | -  | 厚生労働省 | -  |
+| 2020年12月22日 | 働き方改革推進支援助成金 | 254,000円   | -  | 厚生労働省 | -  |
 
 関連会社2社はデータベースに情報すら存在しません。
 
@@ -350,7 +360,7 @@ if __name__ == "__main__":
     main(company_name="ビック・ママ")
 ```
 
-```json
+```python
 gBizINFO APIから「ビック・ママ」の情報を検索しています...
 検索結果: 2件
 

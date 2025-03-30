@@ -23,8 +23,18 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: "Tina",
-  description: "Tina Cloud Starter",
+  title: "Rioto3",
+  description: "Rioto3's Portfolio.",
+  // 以下を追加
+  icons: {
+    icon: '/favicon.ico', // または '/icon.png'
+  },
+  openGraph: {
+    title: "Rioto3's Portfolio",
+    description: "Rioto3's personal portfolio and blog",
+    images: ['/og-image.png'],
+  },
+  // その他のメタデータ
 };
 
 export default async function RootLayout({

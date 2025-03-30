@@ -10,6 +10,7 @@ import { PostConnectionQuery, PostConnectionQueryVariables } from '@/tina/__gene
 import { useLayout } from '@/components/layout/layout-context';
 import MermaidElement from '@/components/mermaid-renderer';
 import { mermaid } from '@/components/blocks/mermaid';
+import RichTags from '@/components/rich-tags';
 
 const titleColorClasses = {
   blue: 'group-hover:text-blue-600 dark:group-hover:text-blue-300',
@@ -46,6 +47,9 @@ export default function PostsClientPage(props: ClientPostProps) {
             href={`/posts/` + post._sys.breadcrumbs.join('/')}
             className='group block px-6 sm:px-8 md:px-10 py-10 mb-8 last:mb-0 bg-gray-50 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-1000 rounded-md shadow-sm transition-all duration-150 ease-out hover:shadow-md hover:to-gray-50 dark:hover:to-gray-800'
           >
+
+
+
             <h3
               className={`text-gray-700 dark:text-white text-3xl lg:text-4xl font-semibold title-font mb-5 transition-all duration-150 ease-out ${
                 titleColorClasses[theme!.color!]
@@ -56,6 +60,10 @@ export default function PostsClientPage(props: ClientPostProps) {
                 <BsArrowRight className='inline-block h-8 -mt-1 ml-1 w-auto opacity-70' />
               </span>
             </h3>
+
+
+<RichTags tags={post.tags || []} />
+
             <div className='prose dark:prose-dark w-full max-w-none mb-5 opacity-70'>
               <TinaMarkdown
                 content={post.excerpt}
