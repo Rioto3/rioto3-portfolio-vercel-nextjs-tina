@@ -13,6 +13,16 @@ const Post: Collection = {
   },
   fields: [
     {
+      type: 'string',
+      name: 'tags',
+      label: 'Tags',
+      description: 'tags',
+      list: true,
+      ui: {
+        component: 'tags',
+      },
+    },
+    {
       type: "string",
       label: "Title",
       name: "title",
