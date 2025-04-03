@@ -269,7 +269,55 @@ class MiyagiSubsidies(Base):
    * 取得した法人情報をデータベースに保存
 
 ```python
-# ここに法人データ収集のコードが入ります
+import requests
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import exists
+
+# データベース設定
+Session = sessionmaker(bind=engine)
+session = Session()
+Base = declarative_base()
+
+# データ取得＆DB保存
+for page in range(1, 11):  # page=1 から page=10（APIの仕様の最大値） まで
+    response = requests.get(
+        f"{BASE_URL}/v1/hojin", headers=HEADERS,
+        params={
+            'prefecture': '04',
+            'exist_flg': 'true',
+            'source': '4',
+            'page': page,
+            'limit': 5000, # APIの仕様の最大値を設定し、最大数の結果取得を目指す
+        }
+    )
+
+    if response.status_code != 200:
+        print(f"エラー: {response.status_code}")
+        continue
+
+    data = response.json()
+
+    for company in data.get('hojin-infos', []):
+        # 企業の法人番号がすでにDBに存在するか確認
+        exists_check = session.query(exists().where(MiyagiCompanies.corporate_number == company.get('corporate_number'))).scalar()
+
+        if not exists_check:
+            new_company = MiyagiCompanies(
+                corporate_number=company.get('corporate_number'),
+                name=company.get('name'),
+                location=company.get('location')
+            )
+            session.add(new_company)
+            print(f"新しい企業データを保存しました: {company.get('corporate_number')}")
+        else:
+            print(f"重複企業（法人番号: {company.get('corporate_number')}）はスキップしました")
+
+    session.commit()  # 取得したデータをコミット
+    print(f"Page {page} のデータを保存しました")
+
+print("データ取得完了！")
+
 ```
 
 1. **補助金データの収集**:
