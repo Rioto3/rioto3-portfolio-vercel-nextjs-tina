@@ -229,6 +229,15 @@ gBizINFO APIの特性上、補助金データを効率的に収集するには2�
 以下にテーブル設計を示します：
 
 ```python
+from sqlalchemy import create_engine, Column, String, Integer, Date, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+
+# データベースエンジンの作成（SQLiteを使用）
+DATABASE_URL = 'sqlite:///./gbizinfo_miyagi.sqlite3'
+engine = create_engine(DATABASE_URL, echo=True)
+Base = declarative_base()
+
 # 宮城県法人テーブルの定義
 class MiyagiCompanies(Base):
     __tablename__ = 'companies'
@@ -274,6 +283,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import exists
 
+# APIの基本設定
+API_TOKEN = "YOUR_API_TOKEN"  # 実際のAPIトークンに置き換えてください
+BASE_URL = "https://info.gbiz.go.jp/hojin" # gBizINFO REST API エンドポイント
+HEADERS = {
+    'accept': 'application/json',
+    'X-hojinInfo-api-token': API_TOKEN
+}
+
 # データベース設定
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -317,7 +334,6 @@ for page in range(1, 11):  # page=1 から page=10（APIの仕様の最大値）
     print(f"Page {page} のデータを保存しました")
 
 print("データ取得完了！")
-
 ```
 
 1. **補助金データの収集**:
@@ -326,7 +342,61 @@ print("データ取得完了！")
    * 取得した補助金情報をデータベースに保存
 
 ```python
-# ここに補助金データ収集のコードが入ります
+import requests
+from datetime import datetime
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+
+# データベース接続
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+
+def get_fiscal_year(date_str):
+    """日付から年度を計算"""
+    date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    return str(date.year) if date.month >= 4 else str(date.year - 1)
+
+
+# 企業リストを取得
+companies = session.query(MiyagiCompanies).all()
+
+
+for company in companies:
+    corporate_number = company.corporate_number
+    response = requests.get(f'{BASE_URL}/v1/hojin/{corporate_number}/subsidy', headers=HEADERS)
+
+    if response.status_code == 200:
+        data = response.json()
+        hojin_infos = data.get("hojin-infos", [])
+
+        if hojin_infos:
+            subsidies = hojin_infos[0].get("subsidy", [])
+
+            for sub in subsidies:
+                date_of_approval = sub.get("date_of_approval")
+
+                if date_of_approval:
+                    date = datetime.strptime(date_of_approval, '%Y-%m-%d').date()
+                    fiscal_year = get_fiscal_year(date_of_approval)
+
+                    subsidy_record = MiyagiSubsidies(
+                        corporate_number=corporate_number,
+                        subsidy_title=sub.get("title"),
+                        amount=int(sub.get("amount") or 0),
+                        date_of_approval=date,
+                        government_department=sub.get("government_departments"),
+                        target=sub.get("target"),
+                        fiscal_year=fiscal_year
+                    )
+                    session.add(subsidy_record)  # データの追加を忘れずに
+    else:
+        print(f"Error fetching data for {corporate_number}: {response.status_code}")
+
+session.commit()  # 重要: すべてのデータをコミット
+session.close()
+print("補助金データの取得＆保存完了！")
 ```
 
 ### エラーハンドリングと増分更新
@@ -354,7 +424,40 @@ APIから取得したデータには、以下のような課題が含まれる�
 これらの課題に対処するため、以下のクレンジング処理を実装しています：
 
 ```python
-# ここにデータクレンジングのコードが入ります
+import pandas as pd
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+
+# データベース接続
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+def query_to_dataframe(model):
+    """SQLAlchemyのモデルをDataFrameに変換する"""
+    df = pd.DataFrame([record.__dict__ for record in session.query(model).all()])
+    df.drop(columns=['_sa_instance_state'], errors='ignore', inplace=True)
+    return df
+
+# 各テーブルのデータを取得してDataFrame化
+df_subsidies = query_to_dataframe(MiyagiSubsidies)
+df_companies = query_to_dataframe(MiyagiCompanies)
+
+# 金額の数値変換（例）
+df_subsidies['amount'] = df_subsidies['amount'].str.replace(',', '').str.replace('円', '').astype(int)
+
+# 日付の標準形式への変換（例）
+df_subsidies['date_of_approval'] = pd.to_datetime(df_subsidies['date_of_approval'])
+
+# 表記ゆれの標準化（例）
+govt_dept_mapping = {
+    '経済産業省': '経産省',
+    '農林水産省': '農水省',
+    # 他の表記ゆれがあれば追加
+}
+df_subsidies['government_department'] = df_subsidies['government_department'].replace(govt_dept_mapping)
+
+session.close()
 ```
 
 主なクレンジング内容：
@@ -376,26 +479,41 @@ APIから取得したデータには、以下のような課題が含まれる�
    * 必要な列のみを選択
 
 ```python
-# ここに集計と結合のコードが入ります
+# 法人データ結合
+df_merge = df_subsidies.merge(df_companies, on='corporate_number', how='left')
+
+# 補助金テーブル(法人名付き)の作成
+df_subsidies_with_name = df_merge[['corporate_number','name','subsidy_title','amount','date_of_approval']]
+df_subsidies_with_name = df_subsidies_with_name.sort_values('corporate_number')
+df_subsidies_with_name.to_csv("miyagi_subsidies.csv", index=False)
+
+# 補助金の回数テーブルの作成
+df_subsidies_count = df_subsidies_with_name.groupby('corporate_number').agg(
+    name=('name', 'first'),
+    subsidy_count=('name', 'count'),  # カウント
+    total_amount=('amount', 'sum'),   # 合計金額を集計
+).reset_index().rename(columns={'subsidy_count': 'subsidy_count', 'total_amount': 'total_amount'})
+
+df_subsidies_count = df_subsidies_count.sort_values(['subsidy_count', 'total_amount'], ascending=[False, False])
+
+# ID（連番）を振る
+df_subsidies_count = df_subsidies_count.assign(id=range(1, len(df_subsidies_count) + 1))
+df_subsidies_count = df_subsidies_count[["id", "corporate_number", "name", "subsidy_count", "total_amount"]]
+
+df_subsidies_count.to_csv("miyagi_subsidies_count.csv", index=False)
 ```
 
 ### 最終CSVデータセットの生成
 
 分析の核となる最終データセットは以下の構造を持ちます：
 
-| corporate\_number | name | location  | subsidy\_count | total\_amount |
-| ----------------- | ---- | --------- | -------------- | ------------- |
-| 8000020040002     | 宮城県  | 宮城県仙台市... | 2073           | 1121292325461 |
-| 8000020041009     | 仙台市  | 宮城県仙台市... | 522            | 398400750588  |
-| ...               | ...  | ...       | ...            | ...           |
+| corporate\_number | name | subsidy\_count | total\_amount |
+| ----------------- | ---- | -------------- | ------------- |
+| 8000020040002     | 宮城県  | 2073           | 1121292325461 |
+| 8000020041009     | 仙台市  | 522            | 398400750588  |
+| ...               | ...  | ...            | ...           |
 
-このデータセットを作成し、CSVファイルとして出力するコードは以下の通りです：
-
-```python
-# ここにCSV出力のコードが入ります
-```
-
-このCSVファイルが、本研究の分析の出発点となります。この時点でデータ収集・処理プロセスは完了し、次のステップである分析フェーズに移行します。
+このデータセットを作成し、CSVファイルとして出力するコードは上記の通りです。このCSVファイルが、本研究の分析の出発点となります。この時点でデータ収集・処理プロセスは完了し、次のステップである分析フェーズに移行します。
 
 ### データの品質検証
 
@@ -407,7 +525,23 @@ APIから取得したデータには、以下のような課題が含まれる�
 * **基本統計量の確認**: 平均、中央値、最大値、最小値などの確認
 
 ```python
-# ここにデータ品質検証のコードが入ります
+# データの基本統計情報
+df_companies.info()
+df_subsidies.info()
+
+# 基本統計量
+df_subsidies.describe()
+
+# 欠損値の数
+df_subsidies.isnull().sum()
+
+# 重複レコード数
+df_companies.duplicated().sum()
+df_subsidies.duplicated().sum()
+
+# 上位データのチェック
+df_companies.head()
+df_subsidies.head()
 ```
 
 また、サンプリングによる目視確認も重要です。特に上位の補助金受給法人については、公開情報と照合して正確性を確認しています。
