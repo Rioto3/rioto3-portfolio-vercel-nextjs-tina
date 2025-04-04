@@ -1,14 +1,14 @@
 name: Production BranchをmainにFast-Forward する
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
-
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "confirm" to fast-forward production branch to main'
+        required: true
+        default: ''
 jobs:
-  reset-drafts:
-    # ラベル条件を削除
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'drafts'
+  fast-forward:
+    if: github.event.inputs.confirm == 'confirm'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,9 +19,26 @@ jobs:
           fetch-depth: 0
           ref: main
       
-      - name: Reset drafts branch to main
+      - name: Fast-forward production to main
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git checkout -B drafts main
-          git push --force origin drafts
+          
+          # 現在のproductionとmainのコミットハッシュを取得
+          PROD_HASH=$(git rev-parse origin/production)
+          MAIN_HASH=$(git rev-parse origin/main)
+          
+          echo "Production commit: $PROD_HASH"
+          echo "Main commit: $MAIN_HASH"
+          
+          # fast-forwardが可能か確認
+          if git merge-base --is-ancestor $PROD_HASH $MAIN_HASH; then
+            echo "Fast-forward is possible. Proceeding..."
+            git checkout production
+            git merge --ff-only origin/main
+            git push origin production
+            echo "Successfully fast-forwarded production to main"
+          else
+            echo "Cannot fast-forward production to main. Production has diverged."
+            exit 1
+          fi
