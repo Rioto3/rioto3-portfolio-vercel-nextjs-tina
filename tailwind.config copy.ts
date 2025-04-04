@@ -63,28 +63,20 @@ module.exports = {
       xl: "1500px",
       "2xl": "1800px",
     },
-
-
-
     fontSize: {
-      xs: ".613rem",     // .875rem * 0.7
-      sm: ".7rem",       // 1rem * 0.7
-      base: ".788rem",   // 1.125rem * 0.7
-      lg: ".875rem",     // 1.25rem * 0.7
-      xl: "1.05rem",     // 1.5rem * 0.7
-      "2xl": "1.225rem", // 1.75rem * 0.7
-      "3xl": "1.4rem",   // 2rem * 0.7
-      "4xl": "1.75rem",  // 2.5rem * 0.7
-      "5xl": "2.275rem", // 3.25rem * 0.7
-      "6xl": "2.8rem",   // 4rem * 0.7
-      "7xl": "3.5rem",   // 5rem * 0.7
-      "8xl": "4.2rem",   // 6rem * 0.7
+      xs: ".875rem",
+      sm: "1rem",
+      base: "1.125rem",
+      lg: "1.25rem",
+      xl: "1.5rem",
+      "2xl": "1.75rem",
+      "3xl": "2rem",
+      "4xl": "2.5rem",
+      "5xl": "3.25rem",
+      "6xl": "4rem",
+      "7xl": "5rem",
+      "8xl": "6rem",
     },
-
-
-
-
-
     borderWidth: {
       DEFAULT: "3px",
       0: "0",
