@@ -1,0 +1,27 @@
+name: ドラフトコンテンツを公開(draftsをmainにスカッシュして自動でFastFowardする)
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  reset-drafts:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'drafts' && contains(github.event.pull_request.labels.*.name, 'content-published')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+      
+      - name: Reset drafts branch to main
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git checkout -B drafts main
+          git push --force origin drafts
