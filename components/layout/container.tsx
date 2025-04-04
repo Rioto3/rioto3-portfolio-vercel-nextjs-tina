@@ -1,6 +1,8 @@
 import React from "react";
 import { cn } from "../../lib/utils";
 
+
+
 export const Container = ({
   children,
   size = "medium",
@@ -26,7 +28,7 @@ export const Container = ({
     <div
       className={cn(
         widthClass[width],
-        `mx-auto px-6 sm:px-8`,
+        `mx-auto px-12 sm:px-32`, // X方向のパディングを大幅に縮小
         verticalPadding[size],
         className
       )}
