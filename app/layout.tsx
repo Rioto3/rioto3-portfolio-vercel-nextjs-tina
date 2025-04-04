@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { Inter as FontSans, Lato, Nunito } from "next/font/google";
 import { cn } from "@/lib/utils";
 import client from "@/tina/__generated__/client";
+import Script from "next/script";  // Next.jsのScriptコンポーネントをインポート
 
 import "@/styles.css";
 
@@ -67,6 +68,18 @@ export default async function RootLayout({
         {/* if you aren't deploying to github pages, feel free to delete these tags */}
         <meta name="X-Frame-Options" content="SAMEORIGIN" />
         <meta name="Content-Security-Policy" content="frame-ancestors 'self'" />
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA4_ID}`}
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${process.env.NEXT_PUBLIC_GA4_ID}');
+          `}
+        </Script>
       </head>
       <body
         suppressHydrationWarning
