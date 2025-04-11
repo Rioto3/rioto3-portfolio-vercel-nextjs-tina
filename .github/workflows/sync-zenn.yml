@@ -42,7 +42,7 @@ jobs:
       - name: Create converter script
         run: |
           mkdir -p $GITHUB_WORKSPACE/scripts
-          cat << 'EOF' > $GITHUB_WORKSPACE/scripts/convert-md-to-mdx.js
+          cat > $GITHUB_WORKSPACE/scripts/convert-md-to-mdx.js << 'END_OF_SCRIPT'
           const fs = require('fs');
           const path = require('path');
           const yaml = require('js-yaml');
@@ -151,7 +151,7 @@ ${content}`;
           }
 
           main();
-          EOF
+          END_OF_SCRIPT
       
       - name: Run converter script
         run: |
