@@ -1,0 +1,62 @@
+name: Sync Zenn to Portfolio
+
+on:
+  # 手動実行用
+  workflow_dispatch:
+    inputs:
+      specific_file:
+        description: '特定のファイルのみ変換する場合はそのファイル名（例: my-article.md）'
+        required: false
+        type: string
+
+jobs:
+  sync-content:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Zenn repository
+        uses: actions/checkout@v3
+        with:
+          repository: Rioto3/zenn-contents
+          path: zenn-contents
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      
+      - name: Checkout Portfolio repository
+        uses: actions/checkout@v3
+        with:
+          repository: Rioto3/rioto3-portfolio-vercel-nextjs-tina
+          path: portfolio
+          ref: drafts
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd $GITHUB_WORKSPACE
+          npm init -y
+          npm install js-yaml gray-matter
+      
+      - name: Run converter script
+        run: |
+          export SOURCE_DIR="$GITHUB_WORKSPACE/zenn-contents/articles"
+          export DEST_DIR="$GITHUB_WORKSPACE/portfolio/content/posts"
+          export SPECIFIC_FILE="${{ github.event.inputs.specific_file }}"
+          node $GITHUB_WORKSPACE/portfolio/scripts/convert-md-to-mdx.js
+      
+      - name: Commit changes to portfolio repo
+        run: |
+          cd $GITHUB_WORKSPACE/portfolio
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add content/posts/*.mdx
+          
+          # 変更がある場合のみコミット
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Sync Zenn articles to portfolio"
+            git push origin drafts
+          fi
