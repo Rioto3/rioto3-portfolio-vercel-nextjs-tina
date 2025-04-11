@@ -95,7 +95,7 @@ function main() {
     try {
       const result = convertMdToMdx(srcPath, destPath, {
         date: new Date().toISOString(),
-        defaultHeroImg: '/uploads/default-hero.png',
+        defaultHeroImg: '',
       });
       
       console.log(`✅ Converted: ${result.srcPath} -> ${result.destPath}`);
